@@ -1,0 +1,81 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit -- --coverage --reporters=default --reporters=jest-junit
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      MONGO_URI: mongodb://127.0.0.1:27017
+      SKIP_CROSSDB_TESTS: "false"
+      TZ: America/Denver
+      API_KEY: test-api-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      
+      # Seed minimal cross-DB fixture using our bootstrap script
+      - name: Seed test data
+        env:
+          APP_ENV: development
+        run: npm run bootstrap:dev
+      
+      - run: npm run test:int -- --coverage --reporters=default --reporters=jest-junit
+      
+      # Run DB health check and capture output
+      - name: DB Health Check
+        run: |
+          npm run db:health:json > db-health.json || true
+          echo "## DB Health Report" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat db-health.json | jq '.' >> $GITHUB_STEP_SUMMARY || cat db-health.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      
+      # Upload artifacts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            db-health.json
+            coverage/
+            junit.xml
+
+  build-docker:
+    needs: [unit, integration]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t pde:${{ github.sha }} .
+      - name: Test Docker image starts
+        run: |
+          # Should fail without MongoDB (expected)
+          docker run --rm -e MONGO_URI=mongodb://nowhere:27017 -e API_KEY=test pde:${{ github.sha }} || echo "Expected failure without DB"

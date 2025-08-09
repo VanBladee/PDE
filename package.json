@@ -4,28 +4,70 @@
   "description": "Pipeline Data Engine - Unified data pipeline for Admin Cockpit dashboard",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "dev": "nodemon --exec ts-node src/index.ts",
     "start": "node dist/index.js",
-    "test": "jest",
+    "test": "jest --runInBand",
+    "test:unit": "jest --runInBand -c jest.unit.config.json",
+    "test:int": "jest --runInBand -c jest.int.config.json",
     "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "indexes": "node dist/scripts/create-indexes.js",
+    "db:health": "node dist/scripts/db-health.js",
+    "db:health:json": "node dist/scripts/db-health.js --json",
+    "bootstrap:dev": "ts-node scripts/bootstrap-dev-data.ts"
   },
-  "keywords": ["etl", "pipeline", "data-processing"],
+  "keywords": [
+    "etl",
+    "pipeline",
+    "data-processing"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^17.2.1",
     "express": "^4.18.2",
+    "mongodb": "^6.3.0",
     "mongoose": "^8.0.0",
     "node-cron": "^3.0.3",
     "smartsheet": "^4.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.14",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^20.10.0",
+    "@types/supertest": "^2.0.16",
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.2.0",
     "nodemon": "^3.0.2",
+    "supertest": "^6.3.4",
+    "testcontainers": "^10.28.0",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/test"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/test/integration/"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.json"
+        }
+      ]
+    }
   }
 }

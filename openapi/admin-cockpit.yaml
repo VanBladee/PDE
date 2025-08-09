@@ -1,7 +1,334 @@
 openapi: 3.0.3
-info: { title: Admin Cockpit API, version: 1.0.0 }
+info:
+  title: Admin Cockpit API
+  version: 1.0.0
+servers:
+  - url: /
+tags:
+  - name: Fee Strategy
+  - name: Credentialing
+security:
+  # Accept either API key OR Bearer JWT (UI currently sends Bearer)
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
 paths:
-  /api/fee-strategy/pivot: { get: { responses: { '200': { description: OK } } } }
-  /api/fee-strategy/pivot.csv: { get: { responses: { '200': { description: CSV } } } }
-  /api/credentialing/status: { get: { responses: { '200': { description: OK } } } }
-  /api/credentialing/export.csv: { get: { responses: { '200': { description: CSV } } } }
+  /api/fee-strategy/pivot:
+    get:
+      tags: [Fee Strategy]
+      summary: Fee Strategy pivot rows
+      operationId: getFeeStrategyPivot
+      parameters:
+        - $ref: '#/components/parameters/start'
+        - $ref: '#/components/parameters/end'
+        - $ref: '#/components/parameters/locations'
+        - $ref: '#/components/parameters/locationsBrackets'   # UI legacy: locations[]
+        - $ref: '#/components/parameters/carriers'
+        - $ref: '#/components/parameters/carriersBrackets'     # UI legacy: carriers[]
+        - $ref: '#/components/parameters/procedures'
+        - $ref: '#/components/parameters/minCount'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PivotResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /api/fee-strategy/pivot.csv:
+    get:
+      tags: [Fee Strategy]
+      summary: Fee Strategy pivot as CSV
+      operationId: getFeeStrategyPivotCsv
+      parameters:
+        - $ref: '#/components/parameters/start'
+        - $ref: '#/components/parameters/end'
+        - $ref: '#/components/parameters/locations'
+        - $ref: '#/components/parameters/locationsBrackets'
+        - $ref: '#/components/parameters/carriers'
+        - $ref: '#/components/parameters/carriersBrackets'
+        - $ref: '#/components/parameters/procedures'
+        - $ref: '#/components/parameters/minCount'
+      responses:
+        '200':
+          description: CSV stream
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+              example: attachment; filename="fee-strategy-pivot.csv"
+          content:
+            text/csv:
+              schema: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  # TEMP compatibility path for current UI (keep until UI updates)
+  /fee-strategy/pivot-data:
+    get:
+      deprecated: true
+      tags: [Fee Strategy]
+      summary: (Deprecated) Legacy pivot path – alias to /api/fee-strategy/pivot
+      responses:
+        '302':
+          description: Redirect to /api/fee-strategy/pivot
+
+  /api/credentialing/status:
+    get:
+      tags: [Credentialing]
+      summary: Credentialing status rows with alerts
+      operationId: getCredentialingStatus
+      parameters:
+        - $ref: '#/components/parameters/start'
+        - $ref: '#/components/parameters/end'
+        - $ref: '#/components/parameters/locations'
+        - $ref: '#/components/parameters/locationsBrackets'
+        - $ref: '#/components/parameters/carriers'
+        - $ref: '#/components/parameters/carriersBrackets'
+        - in: query
+          name: status
+          description: Filter by credentialing status
+          schema:
+            type: string
+            enum: [ACTIVE, PENDING, TERMINATED, OON, UNKNOWN]
+        - in: query
+          name: issuesOnly
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CredentialingResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /api/credentialing/export.csv:
+    get:
+      tags: [Credentialing]
+      summary: Credentialing CSV export
+      operationId: exportCredentialingCsv
+      parameters:
+        - $ref: '#/components/parameters/start'
+        - $ref: '#/components/parameters/end'
+        - $ref: '#/components/parameters/locations'
+        - $ref: '#/components/parameters/locationsBrackets'
+        - $ref: '#/components/parameters/carriers'
+        - $ref: '#/components/parameters/carriersBrackets'
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ACTIVE, PENDING, TERMINATED, OON, UNKNOWN]
+        - in: query
+          name: issuesOnly
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: CSV stream
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+              example: attachment; filename="credentialing-status.csv"
+          content:
+            text/csv:
+              schema: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    start:
+      in: query
+      name: start
+      description: Start date (YYYY-MM-DD). Default = today-90d.
+      schema: { type: string, format: date }
+    end:
+      in: query
+      name: end
+      description: End date (YYYY-MM-DD). Inclusive.
+      schema: { type: string, format: date }
+    locations:
+      in: query
+      name: locations
+      description: Multi-select of location codes or IDs (repeated or comma-separated).
+      schema:
+        oneOf:
+          - type: array
+            items: { type: string }
+            example: ["PROVO","VEGAS"]
+          - type: string
+            example: "PROVO,VEGAS"
+      style: form
+      explode: true
+    locationsBrackets:
+      in: query
+      name: locations[]
+      description: Legacy UI param; same as `locations`. Will be normalized server-side.
+      schema: { type: array, items: { type: string } }
+      style: form
+      explode: true
+      deprecated: true
+    carriers:
+      in: query
+      name: carriers
+      description: Multi-select (repeated or comma-separated).
+      schema:
+        oneOf:
+          - type: array
+            items: { type: string }
+          - type: string
+      style: form
+      explode: true
+    carriersBrackets:
+      in: query
+      name: carriers[]
+      description: Legacy UI param; same as `carriers`.
+      schema: { type: array, items: { type: string } }
+      style: form
+      explode: true
+      deprecated: true
+    procedures:
+      in: query
+      name: procedures
+      schema:
+        oneOf:
+          - type: array
+            items: { type: string }
+          - type: string
+      style: form
+      explode: true
+    minCount:
+      in: query
+      name: minCount
+      schema: { type: integer, minimum: 0, default: 0 }
+    page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 20000, default: 20000 }
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    PivotMetrics:
+      type: object
+      properties:
+        billed: { type: number }
+        allowed: { type: number }
+        paid: { type: number }
+        writeOff: { type: number }
+        writeOffPct: { type: number }
+        feeScheduled: { type: number, nullable: true }
+        scheduleVariance: { type: number, nullable: true }
+        claimCount: { type: integer }
+    PivotRow:
+      type: object
+      properties:
+        carrier: { type: string }
+        locationId: { type: string }
+        locationCode: { type: string }
+        locationName: { type: string }
+        procedure: { type: string }
+        month: { type: string, description: "YYYY-MM" }
+        metrics: { $ref: '#/components/schemas/PivotMetrics' }
+        hasIssues: { type: boolean }
+    PivotSummary:
+      type: object
+      properties:
+        totalRows: { type: integer }
+        dateRange:
+          type: object
+          properties:
+            start: { type: string, format: date }
+            end: { type: string, format: date }
+        lastUpdated: { type: string, format: date-time }
+    PivotResponse:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: '#/components/schemas/PivotRow' }
+        summary: { $ref: '#/components/schemas/PivotSummary' }
+
+    CredentialingRow:
+      type: object
+      properties:
+        provider_npi: { type: string }
+        provider_name: { type: string }
+        tin: { type: string }
+        location_id: { type: string }
+        carrier: { type: string }
+        plan: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [ACTIVE, PENDING, TERMINATED, OON, UNKNOWN]
+        effective_date: { type: string, format: date, nullable: true }
+        term_date: { type: string, format: date, nullable: true }
+        last_verified_at: { type: string, format: date-time, nullable: true }
+        verification_source: { type: string, nullable: true }
+        source_url: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        is_manual_override: { type: boolean, default: false }
+        override_by: { type: string, nullable: true }
+        override_at: { type: string, format: date-time, nullable: true }
+        alerts:
+          type: array
+          items:
+            type: string
+            enum: [NETWORK_MISMATCH, EXPIRING_SOON, STALE_DATA, PENDING_EFFECTIVE]
+    CredentialingResponse:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: '#/components/schemas/CredentialingRow' }
+        summary:
+          type: object
+          properties:
+            totalRows: { type: integer }
+            dateRange:
+              type: object
+              properties:
+                start: { type: string, format: date }
+                end: { type: string, format: date }
+            lastUpdated: { type: string, format: date-time }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string }

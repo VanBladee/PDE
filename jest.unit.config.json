@@ -1,0 +1,16 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/test/unit"],
+  "moduleFileExtensions": ["ts", "tsx", "js", "json"],
+  "clearMocks": true,
+  "transform": {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        "tsconfig": "tsconfig.json",
+        "isolatedModules": true
+      }
+    ]
+  }
+}

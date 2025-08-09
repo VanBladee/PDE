@@ -2,6 +2,7 @@ name: Build Fee Strategy Pivot API
 approval_required: false
 steps:
   - read: [/src/services/unified-claims.service.ts, /src/utils/dataMappers.ts, /openapi/admin-cockpit.yaml]
+  - verify: "file contains 'from: { db: \"crucible\", coll: \"PDC_fee_schedules\" }'"
   - implement: /src/services/unified-claims.service.ts
     goals:
       - Start from activity.processedclaims; unwind nested patients→claims→procedures

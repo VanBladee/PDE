@@ -1,0 +1,17 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/test/integration"],
+  "moduleFileExtensions": ["ts", "tsx", "js", "json"],
+  "clearMocks": true,
+  "testTimeout": 60000,
+  "transform": {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        "tsconfig": "tsconfig.json",
+        "isolatedModules": true
+      }
+    ]
+  }
+}

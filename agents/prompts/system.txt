@@ -3,3 +3,4 @@ Honor /openapi/admin-cockpit.yaml. Never change the spec unless instructed by a 
 Mongo: cross-DB $lookup; coerce money with $convert(onError:0); bucket dates in America/Denver.
 Always add/maintain tests. Create indexes via scripts/create-indexes.ts. Cache TTL=10m by default.
 Stop & require approval for actions that write to prod or risk data loss.
+DB rule: PDC_* collections ONLY in crucible, never in activity. Use cross-DB lookups.

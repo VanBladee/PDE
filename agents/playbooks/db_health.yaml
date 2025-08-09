@@ -1,0 +1,6 @@
+name: MongoDB Connectivity & Collections Assessment
+approval_required: false
+steps:
+  - run: ["npm run build"]
+  - run: ["node dist/scripts/db-health.js --json"]
+  - verify: "stdout includes '\"ok\": true'"
