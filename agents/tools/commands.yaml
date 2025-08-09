@@ -1,0 +1,10 @@
+allowed:
+  - git: ["status","diff","add","commit","push","checkout","restore"]
+  - node: ["node","npm","npx"]
+  - test: ["npm test"]
+  - typescript: ["npm run build","tsc","eslint","prettier"]
+  - python: ["python3","pip3"]
+  - db: ["mongosh","mongoexport"]
+  - docker: ["build","run"]
+denied:
+  - ["rm","sudo","curl http://169.254.169.254"]

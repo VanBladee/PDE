@@ -1,0 +1,1 @@
+{ "name": "PDE", "build": { "dockerfile": "Dockerfile" }, "containerEnv": { "TZ": "America/Denver" } }

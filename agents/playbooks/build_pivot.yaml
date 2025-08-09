@@ -1,0 +1,19 @@
+name: Build Fee Strategy Pivot API
+approval_required: false
+steps:
+  - read: [/src/services/unified-claims.service.ts, /src/utils/dataMappers.ts, /openapi/admin-cockpit.yaml]
+  - implement: /src/services/unified-claims.service.ts
+    goals:
+      - Start from activity.processedclaims; unwind nested patients→claims→procedures
+      - $lookup activity.jobs via job_id for payment.carrierName/dateIssued
+      - $lookup registry.locations for location code/name
+      - Cross-DB $lookup crucible.PDC_fee_schedules; precedence: carrier→location default→global; tie-break latest collected_at
+      - Group: Carrier × Location × Procedure × Month(date_received TZ=America/Denver)
+      - Metrics: billed, allowed, paid, writeOff, weighted writeOffPct, scheduleVariance, claimCount, hasIssues
+  - implement: /src/controllers/fee-strategy.controller.ts
+    adds:
+      - GET /api/fee-strategy/pivot (JSON)
+      - GET /api/fee-strategy/pivot.csv
+  - ensure-indexes: /scripts/create-indexes.ts
+  - tests: add /test/pivot.spec.ts
+  - run: ["npm run build","node dist/scripts/create-indexes.js","npm test"]

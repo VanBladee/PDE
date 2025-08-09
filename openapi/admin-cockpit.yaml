@@ -1,0 +1,7 @@
+openapi: 3.0.3
+info: { title: Admin Cockpit API, version: 1.0.0 }
+paths:
+  /api/fee-strategy/pivot: { get: { responses: { '200': { description: OK } } } }
+  /api/fee-strategy/pivot.csv: { get: { responses: { '200': { description: CSV } } } }
+  /api/credentialing/status: { get: { responses: { '200': { description: OK } } } }
+  /api/credentialing/export.csv: { get: { responses: { '200': { description: CSV } } } }

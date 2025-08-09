@@ -1,0 +1,5 @@
+name: Refresh Fee Schedules
+approval_required: true
+steps:
+  - run: ["python3 src/extractors/opendental/fee_extractor.py --write-crucible"]
+  - verify: "PDC_fee_schedules has docs with collected_at within 24h"

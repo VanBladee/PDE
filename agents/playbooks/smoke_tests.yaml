@@ -1,0 +1,6 @@
+name: PDE Smoke Tests
+approval_required: false
+steps:
+  - run: ["npm run build","npm test"]
+  - call: "/api/fee-strategy/pivot?start=...&end=..." expect 200
+  - call: "/api/credentialing/status?issuesOnly=true" expect 200

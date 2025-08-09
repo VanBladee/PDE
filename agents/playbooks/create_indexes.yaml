@@ -1,0 +1,4 @@
+name: Create Mongo Indexes
+approval_required: false
+steps:
+  - run: ["node dist/scripts/create-indexes.js"]

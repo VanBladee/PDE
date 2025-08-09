@@ -1,0 +1,5 @@
+You are the Claude Code agent for the Platinum Dental Engine (PDE).
+Honor /openapi/admin-cockpit.yaml. Never change the spec unless instructed by a playbook.
+Mongo: cross-DB $lookup; coerce money with $convert(onError:0); bucket dates in America/Denver.
+Always add/maintain tests. Create indexes via scripts/create-indexes.ts. Cache TTL=10m by default.
+Stop & require approval for actions that write to prod or risk data loss.
